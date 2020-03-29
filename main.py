@@ -194,9 +194,23 @@ class UploadHandler(BaseHandler, ABC):
         self.write(self.resp)
 
 
-class ForumHandler(BaseHandler, ABC):
-    def get(self, *args, **kwargs):  # 获取帖子信息，评论
-        pass
+class BBSHandler(BaseHandler, ABC):
+    def get(self, *args, **kwargs):  # 获取所有帖子
+        info = []
+        article = {}
+        rows = self.application.db.execute("SELECT * FROM bbs")
+        for row in rows:
+            article['id'] = row[0]
+            article['title'] = row[1]
+            article['author'] = row[2]
+            article['ctime'] = row[3]
+            article['summary'] = row[4]
+            info.append(article)
+
+        self.resp['success'] = True
+        self.resp['msg'] = 'success'
+        self.resp['data'] = info
+        self.write(self.resp)
 
     def post(self, *args, **kwargs):  # 发表评论，发表帖子
         try:
@@ -210,15 +224,106 @@ class ForumHandler(BaseHandler, ABC):
         title = body.get('title', None)
         author = body.get('author', None)
         ctime = time.time()
-        introduction = body.get('introduction', None)
+        summary = body.get('summary', None)
+        self.application.db.execute("INSERT INTO bbs(title, author, ctime, summary) "
+                                    "VALUES(?,?,?,?,?)", (title, author, ctime, summary))
+        self.application.db.commit()
+        self.resp['success'] = True
+        self.resp['msg'] = 'success'
+        self.resp['data'] = ''
+        self.write(self.resp)
 
     def delete(self):  # 删除评论，删除帖子
-        id = 2
-        self.application.db.execute('DELETE FROM forum WHERE id = %d' % id)
+        id = 2  # ID 通过什么形式上传？？
+        self.application.db.execute('DELETE FROM bbs WHERE id = %d' % id)
+        self.application.db.commit()
 
 
-class CommentHandler(BaseHandler, ABC):
+class PostHandler(BaseHandler, ABC):
+    def get(self):  # 获取某个帖子的评论
+        info = []
+        article = {}
+        rows = self.application.db.execute("SELECT * FROM post")
+        for row in rows:
+            article['id'] = row[0]
+            article['bbs_id'] = row[1]
+            article['author'] = row[2]
+            article['ctime'] = row[3]
+            article['info'] = row[4]
+            info.append(article)
+
+        self.resp['success'] = True
+        self.resp['msg'] = 'success'
+        self.resp['data'] = info
+        self.write(self.resp)
+
     def post(self):
+        try:
+            body = json.loads(self.request.body)
+        except ValueError:
+            self.resp['success'] = False
+            self.resp['msg'] = 'message format error'
+            self.resp['data'] = ''
+            self.write(self.resp)
+            return None
+
+        bbs_id = body.get('bbs_id', None)
+        author = body.get('author', None)
+        ctime = time.time()
+        summary = body.get('summary', None)
+        self.application.db.execute("INSERT INTO article (bbs_id, author, ctime, info) VALUES(?,?,?,?)",
+                                    (bbs_id, author, ctime, summary))
+        self.application.db.commit()
+
+    def delete(self):
+        pass
+
+
+class ReplyHandler(BaseHandler, ABC):
+    def get(self):
+        info = []
+        article = {}
+        rows = self.application.db.execute("SELECT * FROM reply")
+        for row in rows:
+            article['id'] = row[0]
+            article['post_id'] = row[1]
+            article['s_auth'] = row[2]
+            article['d_auth'] = row[3]
+            article['ctime'] = row[4]
+            article['info'] = row[5]
+            info.append(article)
+
+        self.resp['success'] = True
+        self.resp['msg'] = 'success'
+        self.resp['data'] = info
+        self.write(self.resp)
+
+    def post(self):
+        try:
+            body = json.loads(self.request.body)
+        except ValueError:
+            self.resp['success'] = False
+            self.resp['msg'] = 'message format error'
+            self.resp['data'] = ''
+            self.write(self.resp)
+            return None
+
+        post_id = body.get('post_id', None)
+        s_auth = body.get('s_auth', None)
+        d_auth = body.get('d_auth', None)
+        info = body.get('info', None)
+        ctime = time.time()
+
+        self.application.db.execute('INSERT INTO reply(post_id, s_auth, d_auth, ctime, info) VALUES(?,?,?,?,?)',
+                                    (post_id, s_auth, d_auth, ctime, info))
+        self.application.db.commit()
+
+        self.resp['success'] = True
+        self.resp['msg'] = 'success'
+        self.resp['data'] = ''
+        self.write(self.resp)
+
+    def delete(self):
         pass
 
 
@@ -230,8 +335,12 @@ class MallHandler(BaseHandler, ABC):
         pass  # 下单购买商品
 
 
-class TTHandler(BaseHandler):
-    pass
+class TTHandler(BaseHandler, ABC):
+    def get(self):
+        pass
+
+    def post(self):
+        pass
 
 
 class IMHandler(tornado.websocket.WebSocketHandler):

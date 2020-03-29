@@ -48,20 +48,27 @@ if __name__ == '__main__':
         addr VARCHAR(128) NULL,
         head VARCHAR(64) NULL,
     );
-    CREATE TABLE IF NOT EXISTS forum(
+    CREATE TABLE IF NOT EXISTS bbs(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title VARCHAR(128) NOT NULL,
         author VARCHAR(64) NOT NULL,
         ctime REAL NOT NULL,
-        introduction TEXT NULL,
+        summary TEXT NULL,
     );
-    CREATE TABLE IF NOT EXISTS comment(
+    CREATE TABLE IF NOT EXISTS post(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        forum INTEGER NOT NULL,         # 对应帖子
-        author VARCHAR(64) NOT NULL,    # 评论者
-        ctime REAL NOT NULL,         # 评论时间
-        message TEXT NULL,          # 评论内容
-        # reply INTEGER NULL,        # 回复
+        bbs_id INTEGER NOT NULL,         # 对应帖子
+        author VARCHAR(64) NOT NULL,     # 评论者
+        ctime REAL NOT NULL,             # 评论时间
+        info TEXT NULL,                  # 评论内容
+    );
+    CREATE TABLE  IF NOT EXISTS reply(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL,
+        s_auth VARCHAR(64) NOT NULL,
+        d_auth VARCHAR(64) NOT NULL,
+        ctime REAL NOT NULL,
+        info TEXT NULL,
     );
     CREATE TABLE IF NOT EXISTS mall(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,3 +83,4 @@ if __name__ == '__main__':
     """
 
     # 快递鸟
+    # 快递100接口
